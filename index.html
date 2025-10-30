@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>생태환경 퀴즈 — 10문항</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0f1724; --card:#0b1220; --glass:rgba(255,255,255,0.03);
+      --muted:#9aa4b2; --accent1:#57ddff; --accent2:#7b61ff; --success:#4ade80; --danger:#ff6b6b;
+      --radius:14px; color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,#071024 0%, #071726 60%);color:#e6eef6}
+    .wrap{max-width:980px;margin:28px auto;padding:20px;display:grid;grid-template-columns:1fr 340px;gap:20px}
+
+    header{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--accent2),var(--accent1));display:grid;place-items:center;font-weight:700;color:#031028;box-shadow:0 8px 30px rgba(11,10,18,0.6)}
+    h1{margin:0;font-size:20px}
+    p.lead{margin:0;color:var(--muted);font-size:13px}
+
+    /* main quiz area */
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);padding:20px;border-radius:var(--radius);border:1px solid rgba(255,255,255,0.03);box-shadow:0 8px 40px rgba(2,6,23,0.6)}
+    .question{font-size:18px;font-weight:600;margin:0 0 8px 0}
+    .meta{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;margin-bottom:12px}
+    .progress{height:10px;background:rgba(255,255,255,0.03);border-radius:999px;overflow:hidden}
+    .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent1),var(--accent2));width:0%}
+
+    .choices{display:grid;gap:10px}
+    .choice{background:var(--glass);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.02);cursor:pointer}
+    .choice:hover{transform:translateY(-2px);transition:transform .12s}
+    .choice.correct{border-color:rgba(74,222,128,0.3);box-shadow:0 8px 20px rgba(74,222,128,0.06)}
+    .choice.wrong{border-color:rgba(255,107,107,0.12);opacity:0.9}
+
+    .controls{display:flex;justify-content:space-between;align-items:center;margin-top:16px;gap:12px}
+    .controls .left{display:flex;gap:8px}
+    button{background:transparent;border:0;padding:10px 12px;border-radius:10px;color:inherit;cursor:pointer}
+    .btn-primary{background:linear-gradient(90deg,var(--accent2),var(--accent1));color:#031028;font-weight:700}
+    .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.04)}
+
+    aside{position:relative}
+    .panel{position:sticky;top:28px}
+    .stats{display:grid;gap:10px}
+    .stat{background:var(--card);padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,0.02)}
+    .stat h3{margin:0;font-size:13px}
+    .big{font-size:28px;font-weight:700}
+
+    .result{display:none;padding:18px;border-radius:12px;text-align:center}
+    .result.show{display:block}
+    .tag{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.03);font-size:12px}
+
+    footer{grid-column:1/-1;text-align:center;color:var(--muted);font-size:13px;margin-top:18px}
+
+    @media (max-width:900px){.wrap{grid-template-columns:1fr;padding:14px}.panel{position:static}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo">EQ</div>
+        <div>
+          <h1>생태환경 퀴즈</h1>
+          <p class="lead">전지식 테스트 — 10문항으로 환경 지식을 확인해보세요</p>
+        </div>
+      </div>
+      <div>
+        <button id="restartTop" class="btn btn-ghost">다시시작</button>
+      </div>
+    </header>
+
+    <main class="card">
+      <div class="meta">
+        <div id="qnum">문항 0 / 10</div>
+        <div>•</div>
+        <div id="timer">시간: 00:00</div>
+      </div>
+
+      <div class="progress" aria-hidden>
+        <i id="progressBar"></i>
+      </div>
+
+      <h2 class="question" id="question">퀴즈 로딩 중...</h2>
+
+      <div class="choices" id="choices"></div>
+
+      <div class="controls">
+        <div class="left">
+          <button id="prevBtn" class="btn btn-ghost">이전</button>
+          <button id="nextBtn" class="btn btn-ghost">다음</button>
+        </div>
+        <div>
+          <button id="submitBtn" class="btn btn-primary">제출하기</button>
+        </div>
+      </div>
+
+      <div id="resultPanel" class="result">
+        <h3 id="resultTitle">점수</h3>
+        <div id="scoreBig" class="big">0 / 10</div>
+        <p id="resultMsg" style="color:var(--muted)"></p>
+        <div style="margin-top:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+          <button id="reviewBtn" class="btn btn-ghost">문제 복습</button>
+          <button id="restartBtn" class="btn btn-primary">다시 풀기</button>
+          <button id="shareBtn" class="btn btn-ghost">결과 공유</button>
+        </div>
+      </div>
+    </main>
+
+    <aside class="panel">
+      <div class="stat card">
+        <h3>진행 상황</h3>
+        <div class="big" id="progressText">0%</div>
+        <div style="color:var(--muted);font-size:13px;margin-top:6px">정답: <span id="correctCount">0</span> • 오답: <span id="wrongCount">0</span></div>
+      </div>
+
+      <div class="stat" style="margin-top:12px">
+        <h3>퀴즈 정보</h3>
+        <div style="color:var(--muted);font-size:13px">문항 수: 10</div>
+        <div style="color:var(--muted);font-size:13px">타이머: 총 소요 시간 기록</div>
+      </div>
+
+      <div class="stat" style="margin-top:12px">
+        <h3>최고 기록</h3>
+        <div style="font-size:16px;font-weight:700" id="bestScore">-</div>
+        <div style="color:var(--muted);font-size:13px;margin-top:6px" id="bestMeta"></div>
+      </div>
+    </aside>
+
+    <footer>이 퀴즈는 학습용입니다. 정답과 해설은 제출 후 확인하세요.</footer>
+  </div>
+
+  <script>
+    // 10문항 생태환경 퀴즈 데이터
+    const QUESTIONS = [
+      {q: '기후변화의 주요 원인으로 가장 큰 비중을 차지하는 것은 무엇인가요?',
+       choices: ['산업화로 인한 화석연료 연소', '지구 궤도 변화', '태양 활동의 변화', '화산 폭발'],
+       a:0, expl: '온실가스 배출(특히 이산화탄소)은 산업혁명 이후 기후변화의 주요 원인입니다.'},
+
+      {q: '생물다양성 감소가 인간 사회에 미치는 영향으로 올바른 것은?',
+       choices: ['생태계 서비스 감소로 식량·물 공급 불안정', '지구 자전 속도 감소', '대기 중 산소 급감', '지구 자기장 약화'],
+       a:0, expl: '생물다양성 감소는 오염물 정화, 수분 매개 등 생태계 서비스 약화로 이어집니다.'},
+
+      {q: '지구 평균 기온 상승을 2°C 이하로 제한하기 위한 국제 목표는 어느 협약과 관련이 있나요?',
+       choices: ['파리협정', '몬트리올의정서', '교토의정서 이전 협약', '로드맵 2030'],
+       a:0, expl: '파리협정은 지구 평균 기온 상승을 산업화 이전 대비 2°C보다 훨씬 낮게 유지하려는 목표를 포함합니다.'},
+
+      {q: '재생 가능 에너지에 해당하지 않는 것은?',
+       choices: ['석탄', '태양광', '풍력', '지열'],
+       a:0, expl: '석탄은 화석연료로 재생 가능한 에너지가 아닙니다.'},
+
+      {q: '플라스틱 미세섬유가 주로 문제되는 이유는?',
+       choices: ['먹이사슬에 축적되어 생물에 영향', '대기 중 산소를 흡수', '토양의 완전한 분해로 인한 영양 과다', '빛을 반사해 기온 상승'],
+       a:0, expl: '미세플라스틱은 먹이사슬을 통해 생물체에 축적되어 건강 문제를 일으킬 수 있습니다.'},
+
+      {q: '산성비의 주요 원인은 어떤 물질의 배출인가요?',
+       choices: ['황산화물과 질소산화물', '메탄', '이산화탄소', '오존층 파괴 물질'],
+       a:0, expl: '화석연료 연소로 배출되는 SOx와 NOx가 산성비의 원인입니다.'},
+
+      {q: '탄소 중립(carbon neutrality)의 의미는 무엇인가요?',
+       choices: ['배출한 탄소를 흡수·상쇄하여 순배출을 0으로 만드는 것', '탄소 배출을 무제한 허용하는 것', '이산화탄소만 배출하는 것', '탄소를 지구 밖으로 배출하는 것'],
+       a:0, expl: '탄소중립은 배출량과 흡수량을 균형시켜 순배출을 0으로 만들려는 개념입니다.'},
+
+      {q: '열대우림 파괴가 생태계에 미치는 영향으로 틀린 것은?',
+       choices: ['생물다양성 감소', '지역 기후 조절 기능 상실', '대기 중 수소량 급감', '토양 침식 증가'],
+       a:2, expl: '열대우림 파괴는 많은 영향을 미치지만 대기 중 수소량의 급감은 일반적으로 문제가 되지 않습니다.'},
+
+      {q: '해양 산성화의 주된 원인은?',
+       choices: ['해양으로 흡수되는 대기 중 이산화탄소 증가', '해양 염도의 증가', '해수 온도의 급락', '플랑크톤의 과다 성장'],
+       a:0, expl: '대기 중 CO2가 해양에 흡수되어 탄산 농도가 증가하면 산성화가 진행됩니다.'},
+
+      {q: '녹색제품(Green product)이나 친환경 인증을 볼 때 주의할 점은?',
+       choices: ['세부 인증 기준과 범위를 확인해야 한다', '무조건 비싸면 친환경이다', '상품에 녹색 색깔이 있으면 친환경이다', '인증이 없으면 절대 친환경이 아니다'],
+       a:0, expl: '라벨만으로 판단하기보다 어떤 기준으로 인증되었는지 확인하는 것이 중요합니다.'}
+    ];
+
+    // 상태
+    let order = []; // 문제 인덱스 배열
+    let current = 0;
+    let answers = Array(QUESTIONS.length).fill(null);
+    let startTime = null;
+    let timerInterval = null;
+
+    // DOM
+    const qnumEl = document.getElementById('qnum');
+    const questionEl = document.getElementById('question');
+    const choicesEl = document.getElementById('choices');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const correctCountEl = document.getElementById('correctCount');
+    const wrongCountEl = document.getElementById('wrongCount');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const resultPanel = document.getElementById('resultPanel');
+    const scoreBig = document.getElementById('scoreBig');
+    const resultMsg = document.getElementById('resultMsg');
+    const reviewBtn = document.getElementById('reviewBtn');
+    const restartBtn = document.getElementById('restartBtn');
+    const shareBtn = document.getElementById('shareBtn');
+    const timerEl = document.getElementById('timer');
+    const bestScoreEl = document.getElementById('bestScore');
+    const bestMeta = document.getElementById('bestMeta');
+    const restartTop = document.getElementById('restartTop');
+
+    // 초기화 및 시작
+    function init(){
+      // 랜덤 순서 생성
+      order = [...Array(QUESTIONS.length).keys()];
+      shuffle(order);
+      current = 0; answers = Array(QUESTIONS.length).fill(null);
+      startTime = Date.now();
+      startTimer();
+      resultPanel.classList.remove('show');
+      document.getElementById('resultTitle').innerText = '점수';
+      renderQuestion(); updateSidebar(); loadBest();
+    }
+
+    function shuffle(a){
+      for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}
+    }
+
+    function renderQuestion(){
+      const idx = order[current];
+      const Q = QUESTIONS[idx];
+      qnumEl.innerText = `문항 ${current+1} / ${QUESTIONS.length}`;
+      questionEl.innerText = Q.q;
+      // progress
+      const pct = Math.round(((current)/QUESTIONS.length)*100);
+      progressBar.style.width = `${Math.round(((current)/QUESTIONS.length)*100)}%`;
+
+      // choices
+      choicesEl.innerHTML = '';
+      Q.choices.forEach((c,i)=>{
+        const btn = document.createElement('button');
+        btn.className = 'choice';
+        btn.innerText = c;
+        btn.onclick = ()=> selectChoice(current, i);
+        // show selected state
+        if(answers[current] !== null){
+          btn.classList.add(i===answers[current] ? 'selected' : '');
+          btn.disabled = true;
+          // show correct/wrong when answered
+          if(i===Q.a) btn.classList.add('correct');
+          if(answers[current]===i && i!==Q.a) btn.classList.add('wrong');
+        }
+        choicesEl.appendChild(btn);
+      });
+
+      // nav buttons
+      prevBtn.disabled = current===0;
+      nextBtn.disabled = current===QUESTIONS.length-1;
+
+      updateSidebar();
+    }
+
+    function selectChoice(qIndex, choiceIndex){
+      answers[qIndex] = choiceIndex;
+      // lock choices for this question
+      renderQuestion();
+      // auto advance a bit
+      setTimeout(()=>{
+        if(current < QUESTIONS.length-1) { current++; renderQuestion(); }
+      }, 300);
+    }
+
+    prevBtn.addEventListener('click', ()=>{ if(current>0){ current--; renderQuestion(); } });
+    nextBtn.addEventListener('click', ()=>{ if(current<QUESTIONS.length-1){ current++; renderQuestion(); } });
+
+    submitBtn.addEventListener('click', ()=>{
+      if(answers.every(a=>a===null)){
+        if(!confirm('아직 답한 문제가 없습니다. 그래도 제출할까요?')) return;
+      }
+      finishQuiz();
+    });
+
+    function finishQuiz(){
+      stopTimer();
+      // calculate score
+      let correct=0;
+      for(let i=0;i<QUESTIONS.length;i++){
+        const qIdx = order[i];
+        if(answers[i] === QUESTIONS[qIdx].a) correct++;
+      }
+      // show result
+      scoreBig.innerText = `${correct} / ${QUESTIONS.length}`;
+      const pct = Math.round((correct/QUESTIONS.length)*100);
+      resultMsg.innerText = `정답률: ${pct}%`;
+      resultPanel.classList.add('show');
+      // show explanations below choices for review mode
+      showReview();
+      saveBest(correct, pct);
+      updateSidebar();
+    }
+
+    function showReview(){
+      // mark all choices and show explanation
+      choicesEl.innerHTML = '';
+      const idx = order[current];
+      const Q = QUESTIONS[idx];
+      // show question with all options and highlights
+      const box = document.createElement('div');
+      box.style.display='grid';box.style.gap='10px';
+      const qh = document.createElement('div'); qh.className='question'; qh.innerText = Q.q; box.appendChild(qh);
+      Q.choices.forEach((c,i)=>{
+        const el = document.createElement('div'); el.className='choice'; el.innerText = c;
+        if(i===Q.a) el.classList.add('correct');
+        if(answers[current]===i && i!==Q.a) el.classList.add('wrong');
+        box.appendChild(el);
+      });
+      const expl = document.createElement('div'); expl.style.color='var(--muted)'; expl.style.marginTop='8px'; expl.innerText = '해설: ' + (Q.expl || '-');
+      box.appendChild(expl);
+      choicesEl.appendChild(box);
+    }
+
+    reviewBtn.addEventListener('click', ()=>{
+      // open review of all questions sequentially
+      current = 0; renderFullReview();
+    });
+
+    function renderFullReview(){
+      // similar to showReview but for current index and with navigation
+      const idx = order[current];
+      const Q = QUESTIONS[idx];
+      qnumEl.innerText = `복습 ${current+1} / ${QUESTIONS.length}`;
+      questionEl.innerText = Q.q;
+      choicesEl.innerHTML = '';
+      Q.choices.forEach((c,i)=>{
+        const el = document.createElement('div'); el.className='choice'; el.innerText = c;
+        if(i===Q.a) el.classList.add('correct');
+        if(answers[current]===i && i!==Q.a) el.classList.add('wrong');
+        choicesEl.appendChild(el);
+      });
+      const expl = document.createElement('div'); expl.style.color='var(--muted)'; expl.style.marginTop='8px'; expl.innerText = '해설: ' + (Q.expl || '-');
+      choicesEl.appendChild(expl);
+      prevBtn.disabled = current===0; nextBtn.disabled = current===QUESTIONS.length-1;
+    }
+
+    restartBtn.addEventListener('click', ()=>{ if(confirm('퀴즈를 다시 시작할까요?')) init(); });
+    restartTop.addEventListener('click', ()=>{ if(confirm('퀴즈를 다시 시작할까요?')) init(); });
+
+    shareBtn.addEventListener('click', ()=>{
+      const correct = computeCorrect();
+      const pct = Math.round((correct/QUESTIONS.length)*100);
+      const txt = `내 생태환경 퀴즈 점수: ${correct}/${QUESTIONS.length} (${pct}%)`;
+      if(navigator.share){ navigator.share({title:'생태환경 퀴즈 결과', text:txt}).catch(()=>alert(txt)); }
+      else { navigator.clipboard && navigator.clipboard.writeText(txt).then(()=>alert('결과가 클립보드에 복사되었습니다.')) }
+    });
+
+    function computeCorrect(){
+      let c=0; for(let i=0;i<QUESTIONS.length;i++){ const qIdx=order[i]; if(answers[i]===QUESTIONS[qIdx].a) c++; } return c;
+    }
+
+    function updateSidebar(){
+      const correct = computeCorrect();
+      const answered = answers.filter(a=>a!==null).length;
+      const wrong = answered - correct;
+      progressText.innerText = `${Math.round((answered/QUESTIONS.length)*100)}%`;
+      correctCountEl.innerText = correct;
+      wrongCountEl.innerText = wrong;
+      // best score read
+      const pct = Math.round((correct/QUESTIONS.length)*100);
+      const progressBarPct = Math.round((answered/QUESTIONS.length)*100);
+      document.getElementById('progressBar').style.width = `${Math.round(((current+1)/QUESTIONS.length)*100)}%`;
+    }
+
+    // 타이머
+    function startTimer(){
+      updateTimer();
+      timerInterval = setInterval(updateTimer, 1000);
+    }
+    function stopTimer(){ clearInterval(timerInterval); timerInterval=null; }
+    function updateTimer(){
+      const s = Math.floor((Date.now()-startTime)/1000);
+      const mm = String(Math.floor(s/60)).padStart(2,'0');
+      const ss = String(s%60).padStart(2,'0');
+      timerEl.innerText = `시간: ${mm}:${ss}`;
+    }
+
+    // 로컬 최고 점수 저장
+    function saveBest(correct, pct){
+      try{
+        const best = JSON.parse(localStorage.getItem('eco_quiz_best')||'null');
+        const time = Date.now();
+        if(!best || correct>best.correct || (correct===best.correct && pct>best.pct)){
+          const data = {correct, pct, time}; localStorage.setItem('eco_quiz_best', JSON.stringify(data));
+          loadBest();
+        }
+      }catch(e){}
+    }
+    function loadBest(){
+      try{
+        const best = JSON.parse(localStorage.getItem('eco_quiz_best')||'null');
+        if(best){ bestScoreEl.innerText = `${best.correct} / ${QUESTIONS.length} (${best.pct}%)`; bestMeta.innerText = new Date(best.time).toLocaleString(); }
+        else { bestScoreEl.innerText = '-'; bestMeta.innerText = '아직 기록 없음'; }
+      }catch(e){ bestScoreEl.innerText='-'; bestMeta.innerText='불러오기 실패' }
+    }
+
+    // 초기 실행
+    init();
+  </script>
+</body>
+</html>
